@@ -327,38 +327,14 @@ function showTranscriptAndEvaluate() {
 }
 
 async function evaluateWithAI(text) {
-  const prompt = `Aşağıdaki metin, bir Türkçe konuşma pratiği sınavında "Bir gününüzü anlatınız." sorusuna verilen 30 saniyelik sözlü cevabın transkriptidir.
-
-Metni şu kriterler açısından değerlendir:
-1. Kelime seçimi ve zenginliği
-2. Cümle yapısı ve dilbilgisi
-3. Konuya uygunluk ve akıcılık
-4. Genel Türkçe kullanımı
-
-Değerlendirmeni MUTLAKA şu formatta ver:
-PUAN: [1-5 arası tam sayı]
-DEĞERLENDİRME: [Her kriter için kısa yorum, hataları ve güçlü yönleri belirt]
-
-Metin:
-"${text}"`;
-
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://konusmapratigi.internetsiteleriicin1.workers.dev/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }]
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
     });
     const data = await res.json();
-    const reply = data.content[0].text;
-    parseAndShowResult(reply);
+    parseAndShowResult(data.reply);
   } catch(e) {
     document.getElementById('loadingText').style.display = 'none';
     document.getElementById('resultBox').style.display = 'block';
