@@ -16,7 +16,6 @@
         h1 { text-align: center; color: #333; margin-bottom: 10px; }
         .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
 
-        /* Login */
         .login-section { max-width: 400px; margin: 0 auto; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; }
@@ -31,12 +30,10 @@
         button:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
         button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-        /* Tabs */
         .tabs { display: flex; gap: 10px; margin-bottom: 25px; }
         .tab { flex: 1; padding: 15px; text-align: center; background: #f0f0f0; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
         .tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 
-        /* Recording */
         .record-section { text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px; margin: 20px 0; }
         .record-btn { 
             width: 80px; height: 80px; border-radius: 50%; background: #ff4757; 
@@ -49,13 +46,11 @@
         .timer { font-size: 24px; font-weight: bold; color: #333; margin: 15px 0; }
         .audio-preview { margin: 15px 0; }
 
-        /* Status */
         .status { padding: 15px; border-radius: 10px; margin: 15px 0; text-align: center; font-weight: 600; display: none; }
         .status.success { background: #d4edda; color: #155724; display: block; }
         .status.error { background: #f8d7da; color: #721c24; display: block; }
         .status.info { background: #d1ecf1; color: #0c5460; display: block; }
 
-        /* Teacher Panel */
         .teacher-panel { display: none; }
         .submission-card { background: #f8f9fa; border-radius: 15px; padding: 20px; margin-bottom: 15px; border-left: 4px solid #667eea; }
         .submission-header { display: flex; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
@@ -67,7 +62,6 @@
 
         .hidden { display: none; }
 
-        /* Responsive */
         @media (max-width: 600px) { .container { padding: 15px; } .tabs { flex-direction: column; } }
     </style>
 </head>
@@ -167,8 +161,6 @@
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbySy_6Ch7uievr2rliBS4wFE6ppzQspyr5_syKfuVWQIGolJ0JWNFswC9vLUAzMaKTkqg/exec';
 
         // Cloudinary Config
-        // Cloud Name: dee5ahvyy
-        // Upload Preset: konusma_yazma (Unsigned)
         const CLOUDINARY_CLOUD_NAME = 'dee5ahvyy';
         const CLOUDINARY_UPLOAD_PRESET = 'konusma_yazma';
 
@@ -192,7 +184,6 @@
                 return;
             }
 
-            // Öğretmen girişi (hardcoded)
             if (username === 'ogretmen' && password === 'admin123') {
                 currentUser = { username: 'ogretmen', name: 'Öğretmen' };
                 isTeacher = true;
@@ -200,7 +191,6 @@
                 return;
             }
 
-            // Öğrenci girişi - Google Sheets'ten kontrol
             showStatus('loginStatus', 'Giriş yapılıyor...', 'info');
 
             try {
@@ -215,7 +205,6 @@
                     showStatus('loginStatus', 'Kullanıcı adı veya şifre hatalı!', 'error');
                 }
             } catch (e) {
-                // Demo mod: localStorage kontrolü
                 const users = JSON.parse(localStorage.getItem('users') || '[]');
                 const user = users.find(u => u.username === username && u.password === password);
 
@@ -377,8 +366,6 @@
             showStatus('konusmaStatus', 'Ses dosyası yükleniyor...', 'info');
 
             try {
-                // Cloudinary'e yükle
-                // overwrite:false, unique_filename:false → timestamp ile benzersiz isim
                 const timestamp = Date.now();
                 const filename = `${currentUser.username}_${timestamp}`;
 
@@ -400,7 +387,6 @@
                 const uploadData = await uploadRes.json();
                 const audioUrl = uploadData.secure_url;
 
-                // Google Sheets'e kaydet
                 const data = {
                     action: 'submit',
                     type: 'konusma',
@@ -434,7 +420,7 @@
                     tarih: new Date().toLocaleString('tr-TR')
                 };
                 saveToLocal(data);
-                showStatus('konusmaStatus', 'Demo mod: Ses kaydı kaydedildi! (' + e.message + ')', 'success');
+                showStatus('konusmaStatus', 'Demo mod: Ses kaydı kaydedildi!', 'success');
                 resetKonusma();
                 loadMySubmissions();
             }
@@ -448,96 +434,193 @@
             document.getElementById('konusmaSoru').value = '';
         }
 
-        // ==================== LOCAL STORAGE (DEMO) ====================
+        // ==================== GOOGLE SHEETS INTEGRATION ====================
+
+        // Öğrenci: Gönderilerimi Google Sheets'ten çek
+        async function loadMySubmissions() {
+            const container = document.getElementById('mySubmissions');
+
+            try {
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getSubmissions&username=${encodeURIComponent(currentUser.username)}`);
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    renderSubmissions(container, result.data);
+                } else {
+                    // Google Sheets boşsa localStorage'a bak
+                    const localSubs = JSON.parse(localStorage.getItem('submissions') || '[]')
+                        .filter(s => s.username === currentUser.username);
+                    if (localSubs.length > 0) {
+                        renderSubmissions(container, localSubs);
+                    } else {
+                        container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderiniz yok.</p>';
+                    }
+                }
+            } catch (e) {
+                // Offline: localStorage'dan göster
+                const localSubs = JSON.parse(localStorage.getItem('submissions') || '[]')
+                    .filter(s => s.username === currentUser.username);
+                if (localSubs.length > 0) {
+                    renderSubmissions(container, localSubs);
+                } else {
+                    container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderiniz yok.</p>';
+                }
+            }
+        }
+
+        // Öğretmen: Tüm gönderileri Google Sheets'ten çek
+        async function loadTeacherSubmissions() {
+            const container = document.getElementById('teacherSubmissions');
+
+            try {
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllSubmissions`);
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    renderTeacherSubmissions(container, result.data);
+                } else {
+                    const localSubs = JSON.parse(localStorage.getItem('submissions') || '[]');
+                    if (localSubs.length > 0) {
+                        renderTeacherSubmissions(container, localSubs);
+                    } else {
+                        container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderi yok.</p>';
+                    }
+                }
+            } catch (e) {
+                const localSubs = JSON.parse(localStorage.getItem('submissions') || '[]');
+                if (localSubs.length > 0) {
+                    renderTeacherSubmissions(container, localSubs);
+                } else {
+                    container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderi yok.</p>';
+                }
+            }
+        }
+
+        // Öğretmen: Düzeltmeyi Google Sheets'e kaydet
+        async function saveDuzeltmeToSheets(rowIndex, duzeltme) {
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateDuzeltme',
+                        rowIndex: rowIndex,
+                        duzeltme: duzeltme,
+                        durum: 'Düzeltildi'
+                    })
+                });
+                const result = await response.json();
+                return result.success;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // ==================== RENDER FUNCTIONS ====================
+
+        function renderSubmissions(container, submissions) {
+            container.innerHTML = submissions.reverse().map(s => `
+                <div class="submission-card">
+                    <div class="submission-header">
+                        <span class="badge ${s.type}">${s.type === 'yazma' ? '✍️ Yazma' : '🎙️ Konuşma'}</span>
+                        <span class="badge ${s.durum === 'Yeni' ? 'yeni' : 'duzeltildi'}">${s.durum || 'Yeni'}</span>
+                    </div>
+                    <p><strong>Soru:</strong> ${(s.soru || '').substring(0, 100)}...</p>
+                    ${s.type === 'yazma' 
+                        ? `<p><strong>Cevap:</strong> ${(s.cevap || '').substring(0, 150)}...</p>` 
+                        : `<p><strong>Ses:</strong> <a href="${s.audioUrl || s[6] || '#'}" target="_blank">Dinle</a></p>`
+                    }
+                    <p style="color: #666; font-size: 14px; margin-top: 10px;">${s.tarih || s[0] || ''}</p>
+                    ${(s.duzeltme || s[8]) 
+                        ? `<div style="background: #e8f5e9; padding: 10px; border-radius: 8px; margin-top: 10px;"><strong>Öğretmen Düzeltmesi:</strong><br>${s.duzeltme || s[8]}</div>` 
+                        : ''
+                    }
+                </div>
+            `).join('');
+        }
+
+        function renderTeacherSubmissions(container, submissions) {
+            container.innerHTML = submissions.reverse().map((s, idx) => `
+                <div class="submission-card" data-row="${s.rowIndex || (submissions.length - idx)}">
+                    <div class="submission-header">
+                        <div>
+                            <span class="badge ${s.type || s[3]}">${(s.type || s[3]) === 'yazma' ? '✍️ Yazma' : '🎙️ Konuşma'}</span>
+                            <span class="badge ${(s.durum || s[7] || 'Yeni') === 'Yeni' ? 'yeni' : 'duzeltildi'}">${s.durum || s[7] || 'Yeni'}</span>
+                            <strong style="margin-left: 10px;">${s.name || s[2] || ''}</strong>
+                        </div>
+                        <span style="color: #666; font-size: 14px;">${s.tarih || s[0] || ''}</span>
+                    </div>
+                    <p><strong>Soru:</strong> ${s.soru || s[4] || ''}</p>
+                    ${(s.type || s[3]) === 'yazma' 
+                        ? `<div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;"><strong>Öğrenci Cevabı:</strong><br>${s.cevap || s[5] || ''}</div>`
+                        : `<p><strong>Ses Kaydı:</strong> <a href="${s.audioUrl || s[6] || '#'}" target="_blank">🎵 Dinlemek için tıklayın</a></p>`
+                    }
+                    <div style="margin-top: 15px;">
+                        <textarea id="duzeltme-${s.rowIndex || (submissions.length - idx)}" placeholder="Düzeltmenizi buraya yazın..." style="min-height: 80px; margin-bottom: 10px;">${s.duzeltme || s[8] || ''}</textarea>
+                        <button onclick="saveDuzeltme(${s.rowIndex || (submissions.length - idx)})" style="width: auto; padding: 10px 20px;">Düzeltmeyi Kaydet</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== LOCAL STORAGE (BACKUP) ====================
         function saveToLocal(data) {
             let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
             data.id = Date.now();
             data.duzeltme = '';
             data.durum = 'Yeni';
+            data.rowIndex = submissions.length + 2; // Sheets satır numarası (header + 1)
             submissions.push(data);
             localStorage.setItem('submissions', JSON.stringify(submissions));
         }
 
-        function loadMySubmissions() {
-            const container = document.getElementById('mySubmissions');
-            let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
-            submissions = submissions.filter(s => s.username === currentUser.username);
+        // ==================== TEACHER ACTIONS ====================
+        async function saveDuzeltme(rowIndex) {
+            const duzeltme = document.getElementById(`duzeltme-${rowIndex}`).value;
 
-            if (submissions.length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderiniz yok.</p>';
-                return;
+            // Önce Google Sheets'e kaydetmeyi dene
+            const savedToSheets = await saveDuzeltmeToSheets(rowIndex, duzeltme);
+
+            if (savedToSheets) {
+                showStatus('teacherSubmissions', 'Düzeltme Google Sheets'e kaydedildi!', 'success');
+            } else {
+                // Fallback: localStorage'a kaydet
+                let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+                const index = submissions.findIndex(s => (s.rowIndex || s.id) === rowIndex);
+
+                if (index !== -1) {
+                    submissions[index].duzeltme = duzeltme;
+                    submissions[index].durum = 'Düzeltildi';
+                    localStorage.setItem('submissions', JSON.stringify(submissions));
+                }
+                showStatus('teacherSubmissions', 'Düzeltme kaydedildi (localStorage)', 'success');
             }
 
-            container.innerHTML = submissions.reverse().map(s => `
-                <div class="submission-card">
-                    <div class="submission-header">
-                        <span class="badge ${s.type}">${s.type === 'yazma' ? '✍️ Yazma' : '🎙️ Konuşma'}</span>
-                        <span class="badge ${s.durum === 'Yeni' ? 'yeni' : 'duzeltildi'}">${s.durum}</span>
-                    </div>
-                    <p><strong>Soru:</strong> ${s.soru.substring(0, 100)}...</p>
-                    ${s.type === 'yazma' ? `<p><strong>Cevap:</strong> ${s.cevap.substring(0, 150)}...</p>` : `<p><strong>Ses:</strong> <a href="${s.audioUrl}" target="_blank">Dinle</a></p>`}
-                    <p style="color: #666; font-size: 14px; margin-top: 10px;">${s.tarih}</p>
-                    ${s.duzeltme ? `<div style="background: #e8f5e9; padding: 10px; border-radius: 8px; margin-top: 10px;"><strong>Öğretmen Düzeltmesi:</strong><br>${s.duzeltme}</div>` : ''}
-                </div>
-            `).join('');
-        }
-
-        // ==================== TEACHER PANEL ====================
-        function loadTeacherSubmissions() {
-            const container = document.getElementById('teacherSubmissions');
-            let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
-
-            if (submissions.length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderi yok.</p>';
-                return;
-            }
-
-            container.innerHTML = submissions.reverse().map(s => `
-                <div class="submission-card">
-                    <div class="submission-header">
-                        <div>
-                            <span class="badge ${s.type}">${s.type === 'yazma' ? '✍️ Yazma' : '🎙️ Konuşma'}</span>
-                            <span class="badge ${s.durum === 'Yeni' ? 'yeni' : 'duzeltildi'}">${s.durum}</span>
-                            <strong style="margin-left: 10px;">${s.name}</strong>
-                        </div>
-                        <span style="color: #666; font-size: 14px;">${s.tarih}</span>
-                    </div>
-                    <p><strong>Soru:</strong> ${s.soru}</p>
-                    ${s.type === 'yazma' 
-                        ? `<div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;"><strong>Öğrenci Cevabı:</strong><br>${s.cevap}</div>`
-                        : `<p><strong>Ses Kaydı:</strong> <a href="${s.audioUrl}" target="_blank">🎵 Dinlemek için tıklayın</a></p>`
-                    }
-                    <div style="margin-top: 15px;">
-                        <textarea id="duzeltme-${s.id}" placeholder="Düzeltmenizi buraya yazın..." style="min-height: 80px; margin-bottom: 10px;">${s.duzeltme || ''}</textarea>
-                        <button onclick="saveDuzeltme(${s.id})" style="width: auto; padding: 10px 20px;">Düzeltmeyi Kaydet</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function saveDuzeltme(id) {
-            const duzeltme = document.getElementById(`duzeltme-${id}`).value;
-            let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
-            const index = submissions.findIndex(s => s.id === id);
-
-            if (index !== -1) {
-                submissions[index].duzeltme = duzeltme;
-                submissions[index].durum = 'Düzeltildi';
-                localStorage.setItem('submissions', JSON.stringify(submissions));
-                loadTeacherSubmissions();
-            }
+            loadTeacherSubmissions();
         }
 
         // ==================== UTILS ====================
         function showStatus(id, message, type) {
             const el = document.getElementById(id);
+            if (!el) return;
+
+            // Eğer container ise, içine status div ekle
+            if (el.classList.contains('submission-card') || el.id === 'teacherSubmissions' || el.id === 'mySubmissions') {
+                const statusDiv = document.createElement('div');
+                statusDiv.className = `status ${type}`;
+                statusDiv.textContent = message;
+                statusDiv.style.display = 'block';
+                el.insertBefore(statusDiv, el.firstChild);
+                setTimeout(() => statusDiv.remove(), 5000);
+                return;
+            }
+
             el.textContent = message;
             el.className = `status ${type}`;
             setTimeout(() => { el.style.display = 'none'; }, 5000);
             el.style.display = 'block';
         }
 
-        // Demo kullanıcıları ekle (ilk açılışta)
+        // Demo kullanıcıları
         if (!localStorage.getItem('users')) {
             localStorage.setItem('users', JSON.stringify([
                 { username: 'ahmet', password: '123456', name: 'Ahmet Yılmaz' },
