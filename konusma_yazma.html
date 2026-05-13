@@ -15,7 +15,7 @@
         .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 20px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
         h1 { text-align: center; color: #333; margin-bottom: 10px; }
         .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-        
+
         /* Login */
         .login-section { max-width: 400px; margin: 0 auto; }
         .form-group { margin-bottom: 20px; }
@@ -30,12 +30,12 @@
         }
         button:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
         button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        
+
         /* Tabs */
         .tabs { display: flex; gap: 10px; margin-bottom: 25px; }
         .tab { flex: 1; padding: 15px; text-align: center; background: #f0f0f0; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
         .tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        
+
         /* Recording */
         .record-section { text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px; margin: 20px 0; }
         .record-btn { 
@@ -48,13 +48,13 @@
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(46, 213, 115, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0); } }
         .timer { font-size: 24px; font-weight: bold; color: #333; margin: 15px 0; }
         .audio-preview { margin: 15px 0; }
-        
+
         /* Status */
         .status { padding: 15px; border-radius: 10px; margin: 15px 0; text-align: center; font-weight: 600; display: none; }
         .status.success { background: #d4edda; color: #155724; display: block; }
         .status.error { background: #f8d7da; color: #721c24; display: block; }
         .status.info { background: #d1ecf1; color: #0c5460; display: block; }
-        
+
         /* Teacher Panel */
         .teacher-panel { display: none; }
         .submission-card { background: #f8f9fa; border-radius: 15px; padding: 20px; margin-bottom: 15px; border-left: 4px solid #667eea; }
@@ -64,9 +64,9 @@
         .badge.konusma { background: #fce4ec; color: #c2185b; }
         .badge.yeni { background: #fff3e0; color: #e65100; }
         .badge.duzeltildi { background: #e8f5e9; color: #2e7d32; }
-        
+
         .hidden { display: none; }
-        
+
         /* Responsive */
         @media (max-width: 600px) { .container { padding: 15px; } .tabs { flex-direction: column; } }
     </style>
@@ -75,7 +75,7 @@
     <div class="container">
         <h1>📚 Yazma & Konuşma Platformu</h1>
         <p class="subtitle">Öğrenci Girişi ve Gönderim Sistemi</p>
-        
+
         <!-- LOGIN -->
         <div id="loginSection" class="login-section">
             <div class="form-group">
@@ -88,9 +88,6 @@
             </div>
             <button onclick="login()">Giriş Yap</button>
             <div id="loginStatus" class="status"></div>
-            <p style="text-align: center; margin-top: 15px; color: #666; font-size: 14px;">
-                <strong></strong><code></code><code></code>
-            </p>
         </div>
 
         <!-- STUDENT PANEL -->
@@ -135,14 +132,14 @@
                         <option value="Hangi mevsimde doğdunuz?">Hangi mevsimde doğdunuz?</option>
                     </select>
                 </div>
-                
+
                 <div class="record-section">
                     <p>Mikrofon izni verip kayda başlayın:</p>
                     <button class="record-btn" id="recordBtn" onclick="toggleRecord()">🎤</button>
                     <div class="timer" id="timer">00:00</div>
                     <div class="audio-preview" id="audioPreview"></div>
                 </div>
-                
+
                 <button onclick="submitKonusma()" id="submitKonusmaBtn" disabled>Gönder</button>
                 <div id="konusmaStatus" class="status"></div>
             </div>
@@ -168,11 +165,13 @@
         // ==================== CONFIG ====================
         // Google Sheets Web App URL'nizi buraya yapıştırın
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbySy_6Ch7uievr2rliBS4wFE6ppzQspyr5_syKfuVWQIGolJ0JWNFswC9vLUAzMaKTkqg/exec';
-        
+
         // Cloudinary Config
-        const CLOUDINARY_CLOUD_NAME = 'konusma_yazma';
+        // Cloud Name: dee5ahvyy
+        // Upload Preset: konusma_yazma (Unsigned)
+        const CLOUDINARY_CLOUD_NAME = 'dee5ahvyy';
         const CLOUDINARY_UPLOAD_PRESET = 'konusma_yazma';
-        
+
         // ==================== STATE ====================
         let currentUser = null;
         let isTeacher = false;
@@ -187,7 +186,7 @@
         async function login() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
-            
+
             if (!username || !password) {
                 showStatus('loginStatus', 'Lütfen kullanıcı adı ve şifre girin!', 'error');
                 return;
@@ -203,12 +202,11 @@
 
             // Öğrenci girişi - Google Sheets'ten kontrol
             showStatus('loginStatus', 'Giriş yapılıyor...', 'info');
-            
+
             try {
-                // Google Sheets'ten kullanıcıları çek
                 const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
                 const result = await response.json();
-                
+
                 if (result.success) {
                     currentUser = { username: username, name: result.name || username };
                     isTeacher = false;
@@ -220,13 +218,13 @@
                 // Demo mod: localStorage kontrolü
                 const users = JSON.parse(localStorage.getItem('users') || '[]');
                 const user = users.find(u => u.username === username && u.password === password);
-                
+
                 if (user) {
                     currentUser = { username: username, name: user.name || username };
                     isTeacher = false;
                     showStudentPanel();
                 } else {
-                    showStatus('loginStatus', 'Giriş başarısız! (Demo: öğretmen/ogretmen admin123)', 'error');
+                    showStatus('loginStatus', 'Giriş başarısız!', 'error');
                 }
             }
         }
@@ -254,7 +252,7 @@
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            
+
             if (tab === 'yazma') {
                 document.getElementById('yazmaSection').classList.remove('hidden');
                 document.getElementById('konusmaSection').classList.add('hidden');
@@ -268,7 +266,7 @@
         async function submitYazma() {
             const soru = document.getElementById('yazmaSoru').value;
             const cevap = document.getElementById('yazmaCevap').value.trim();
-            
+
             if (!soru || !cevap) {
                 showStatus('yazmaStatus', 'Lütfen soru seçin ve cevap yazın!', 'error');
                 return;
@@ -292,14 +290,13 @@
                     body: JSON.stringify(data)
                 });
                 const result = await response.json();
-                
+
                 if (result.success) {
                     showStatus('yazmaStatus', 'Cevabınız başarıyla gönderildi!', 'success');
                     document.getElementById('yazmaCevap').value = '';
                     loadMySubmissions();
                 }
             } catch (e) {
-                // Demo: localStorage'a kaydet
                 saveToLocal(data);
                 showStatus('yazmaStatus', 'Demo mod: Cevabınız kaydedildi!', 'success');
                 document.getElementById('yazmaCevap').value = '';
@@ -321,11 +318,11 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
-                
+
                 mediaRecorder.ondataavailable = (e) => {
                     audioChunks.push(e.data);
                 };
-                
+
                 mediaRecorder.onstop = () => {
                     recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const audioUrl = URL.createObjectURL(recordedBlob);
@@ -334,14 +331,14 @@
                     `;
                     document.getElementById('submitKonusmaBtn').disabled = false;
                 };
-                
+
                 mediaRecorder.start();
                 isRecording = true;
-                
+
                 const btn = document.getElementById('recordBtn');
                 btn.classList.add('recording');
                 btn.innerHTML = '⏹️';
-                
+
                 recordSeconds = 0;
                 recordTimer = setInterval(() => {
                     recordSeconds++;
@@ -349,7 +346,7 @@
                     const secs = (recordSeconds % 60).toString().padStart(2, '0');
                     document.getElementById('timer').textContent = `${mins}:${secs}`;
                 }, 1000);
-                
+
             } catch (err) {
                 showStatus('konusmaStatus', 'Mikrofon erişimi reddedildi! Lütfen izin verin.', 'error');
             }
@@ -359,10 +356,10 @@
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
                 mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                
+
                 isRecording = false;
                 clearInterval(recordTimer);
-                
+
                 const btn = document.getElementById('recordBtn');
                 btn.classList.remove('recording');
                 btn.innerHTML = '🎤';
@@ -371,7 +368,7 @@
 
         async function submitKonusma() {
             const soru = document.getElementById('konusmaSoru').value;
-            
+
             if (!soru || !recordedBlob) {
                 showStatus('konusmaStatus', 'Lütfen soru seçin ve ses kaydı yapın!', 'error');
                 return;
@@ -381,17 +378,25 @@
 
             try {
                 // Cloudinary'e yükle
-                const formData = new FormData();
-                formData.append('file', recordedBlob);
-                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-                formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
-                formData.append('resource_type', 'video'); // ses için video kullanılır
+                // overwrite:false, unique_filename:false → timestamp ile benzersiz isim
+                const timestamp = Date.now();
+                const filename = `${currentUser.username}_${timestamp}`;
 
-                const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
+                const formData = new FormData();
+                formData.append('file', recordedBlob, `${filename}.webm`);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                formData.append('public_id', filename);
+
+                const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
                     method: 'POST',
                     body: formData
                 });
-                
+
+                if (!uploadRes.ok) {
+                    const errorData = await uploadRes.json();
+                    throw new Error(errorData.error?.message || 'Yükleme başarısız');
+                }
+
                 const uploadData = await uploadRes.json();
                 const audioUrl = uploadData.secure_url;
 
@@ -418,7 +423,7 @@
                     loadMySubmissions();
                 }
             } catch (e) {
-                // Demo: localStorage
+                console.error('Hata:', e);
                 const data = {
                     action: 'submit',
                     type: 'konusma',
@@ -429,7 +434,7 @@
                     tarih: new Date().toLocaleString('tr-TR')
                 };
                 saveToLocal(data);
-                showStatus('konusmaStatus', 'Demo mod: Ses kaydı kaydedildi!', 'success');
+                showStatus('konusmaStatus', 'Demo mod: Ses kaydı kaydedildi! (' + e.message + ')', 'success');
                 resetKonusma();
                 loadMySubmissions();
             }
@@ -457,12 +462,12 @@
             const container = document.getElementById('mySubmissions');
             let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
             submissions = submissions.filter(s => s.username === currentUser.username);
-            
+
             if (submissions.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderiniz yok.</p>';
                 return;
             }
-            
+
             container.innerHTML = submissions.reverse().map(s => `
                 <div class="submission-card">
                     <div class="submission-header">
@@ -481,12 +486,12 @@
         function loadTeacherSubmissions() {
             const container = document.getElementById('teacherSubmissions');
             let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
-            
+
             if (submissions.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center;">Henüz gönderi yok.</p>';
                 return;
             }
-            
+
             container.innerHTML = submissions.reverse().map(s => `
                 <div class="submission-card">
                     <div class="submission-header">
@@ -514,7 +519,7 @@
             const duzeltme = document.getElementById(`duzeltme-${id}`).value;
             let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
             const index = submissions.findIndex(s => s.id === id);
-            
+
             if (index !== -1) {
                 submissions[index].duzeltme = duzeltme;
                 submissions[index].durum = 'Düzeltildi';
